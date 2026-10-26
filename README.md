@@ -49,9 +49,3 @@ Antes de embutir os dados no código HTML/JS, a planilha passou pelas seguintes 
 - **Tailwind CSS (via CDN)** — Estilização responsiva e tema *Porsche Dark Luxury*.
 - **Chart.js (via CDN)** — Gráficos interativos e responsivos.
 - **GitHub Pages** — Hospedagem estática gratuita.
-
----
-
-## 📸 5. Demonstração
-
-*(Adicione aqui um print da tela principal da sua dashboard e um segundo print com um filtro aplicado, ex: apenas Estado = SP ou Modelo = 911 Carrera).*
