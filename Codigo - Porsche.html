@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Porsche Brasil | Sales Executive Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0b0c10;
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+    }
+    .brand-font {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.1em;
+    }
+    .card-glass {
+      background: linear-gradient(145deg, #16181f 0%, #111318 100%);
+      border: 1px solid #262936;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+    .porsche-red {
+      color: #d5001c;
+    }
+    .bg-porsche-red {
+      background-color: #d5001c;
+    }
+    .border-porsche-red {
+      border-color: #d5001c;
+    }
+    select {
+      background-color: #16181f;
+      border: 1px solid #2e3244;
+      color: #fff;
+    }
+    select:focus {
+      outline: none;
+      border-color: #d5001c;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0b0c10; }
+    ::-webkit-scrollbar-thumb { background: #262936; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d5001c; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="border-b border-gray-800 bg-[#0e1015] sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-2 h-10 bg-porsche-red rounded-full"></div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold brand-font tracking-wider text-white">
+            PORSCHE <span class="text-xs font-normal text-gray-400 font-sans tracking-normal ml-2">SALES INTELLIGENCE</span>
+          </h1>
+          <p class="text-xs text-gray-400">Base Sanitizada • Análise Executiva de Performance Comercial</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="resetFilters()" class="px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition border border-gray-700">
+          Limpar Filtros
+        </button>
+        <button onclick="toggleModal()" class="px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-porsche-red hover:bg-red-700 text-white rounded-lg transition shadow-lg shadow-red-900/30">
+          Importar CSV
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- FILTERS BAR -->
+    <section class="card-glass rounded-xl p-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Modelo</label>
+          <select id="filterModelo" onchange="applyFilters()" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="ALL">Todos os Modelos</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Estado (UF)</label>
+          <select id="filterEstado" onchange="applyFilters()" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="ALL">Todos os Estados</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Ano da Venda</label>
+          <select id="filterAno" onchange="applyFilters()" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="ALL">Todos os Anos</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Método de Pagamento</label>
+          <select id="filterPagamento" onchange="applyFilters()" class="w-full rounded-lg px-3 py-2 text-sm">
+            <option value="ALL">Todos os Métodos</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI CARDS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card-glass rounded-xl p-5 border-l-4 border-porsche-red">
+        <p class="text-xs text-gray-400 uppercase font-semibold">Receita Total</p>
+        <h2 id="kpiReceita" class="text-2xl font-bold text-white mt-2">R$ 0</h2>
+        <p class="text-xs text-emerald-400 mt-1">Faturamento bruto no recorte</p>
+      </div>
+
+      <div class="card-glass rounded-xl p-5 border-l-4 border-amber-500">
+        <p class="text-xs text-gray-400 uppercase font-semibold">Volume de Vendas</p>
+        <h2 id="kpiVolume" class="text-2xl font-bold text-white mt-2">0</h2>
+        <p class="text-xs text-gray-400 mt-1">Unidades entregues</p>
+      </div>
+
+      <div class="card-glass rounded-xl p-5 border-l-4 border-blue-500">
+        <p class="text-xs text-gray-400 uppercase font-semibold">Ticket Médio</p>
+        <h2 id="kpiTicket" class="text-2xl font-bold text-white mt-2">R$ 0</h2>
+        <p class="text-xs text-gray-400 mt-1">Valor médio por veículo</p>
+      </div>
+
+      <div class="card-glass rounded-xl p-5 border-l-4 border-purple-500">
+        <p class="text-xs text-gray-400 uppercase font-semibold">Modelo Líder (Receita)</p>
+        <h2 id="kpiTopModelo" class="text-xl font-bold text-white mt-2 truncate">-</h2>
+        <p id="kpiTopModeloSub" class="text-xs text-purple-400 mt-1">Maior gerador de caixa</p>
+      </div>
+    </section>
+
+    <!-- CHARTS ROW 1: PERGUNTAS 1 E 2 -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Pergunta 1 -->
+      <div class="card-glass rounded-xl p-5 flex flex-col justify-between">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-1 bg-red-950 text-red-400 rounded">Pergunta de Negócio 1</span>
+          <h3 class="text-base font-bold text-white mt-2">Qual modelo gera maior Faturamento vs. Volume de Vendas?</h3>
+          <p class="text-xs text-gray-400 mb-4">Compara a receita acumulada (R$) com a quantidade de unidades vendidas por modelo.</p>
+        </div>
+        <div class="relative h-72 w-full">
+          <canvas id="chartModelos"></canvas>
+        </div>
+      </div>
+
+      <!-- Pergunta 2 -->
+      <div class="card-glass rounded-xl p-5 flex flex-col justify-between">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-1 bg-amber-950 text-amber-400 rounded">Pergunta de Negócio 2</span>
+          <h3 class="text-base font-bold text-white mt-2">Onde estão concentrados os maiores mercados (Receita por Estado)?</h3>
+          <p class="text-xs text-gray-400 mb-4">Identifica as praças mais lucrativas para direcionamento de estoque e eventos VIP.</p>
+        </div>
+        <div class="relative h-72 w-full">
+          <canvas id="chartEstados"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARTS ROW 2: PERGUNTA 3 E EVOLUÇÃO/TABELA -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Pergunta 3 -->
+      <div class="card-glass rounded-xl p-5 lg:col-span-1 flex flex-col justify-between">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-1 bg-blue-950 text-blue-400 rounded">Pergunta de Negócio 3</span>
+          <h3 class="text-base font-bold text-white mt-2">Qual a participação dos Métodos de Pagamento na Receita?</h3>
+          <p class="text-xs text-gray-400 mb-4">Avalia a preferência de liquidez (À Vista, Financiamento, Leasing/Consórcio).</p>
+        </div>
+        <div class="relative h-64 w-full flex items-center justify-center">
+          <canvas id="chartPagamentos"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabela de Amostra de Registros Sanitizados -->
+      <div class="card-glass rounded-xl p-5 lg:col-span-2 flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-bold text-white">Detalhamento das Vendas (Base Sanitizada)</h3>
+            <p class="text-xs text-gray-400">Listagem dinâmica reativa aos filtros selecionados acima.</p>
+          </div>
+          <span id="tableCount" class="text-xs font-semibold bg-gray-800 text-gray-300 px-3 py-1 rounded-full">100 registros</span>
+        </div>
+        <div class="overflow-y-auto max-h-64 border border-gray-800 rounded-lg">
+          <table class="w-full text-left text-xs text-gray-300">
+            <thead class="bg-[#161821] text-gray-400 uppercase sticky top-0">
+              <tr>
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Modelo</th>
+                <th class="py-3 px-4">Cidade / UF</th>
+                <th class="py-3 px-4">Ano</th>
+                <th class="py-3 px-4">Pagamento</th>
+                <th class="py-3 px-4 text-right">Preço (R$)</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-gray-800">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL PARA IMPORTAR CSV DA PLANILHA -->
+  <div id="csvModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+    <div class="card-glass max-w-lg w-full rounded-xl p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-white">Carregar Base CSV Sanitizada</h3>
+        <button onclick="toggleModal()" class="text-gray-400 hover:text-white">&times;</button>
+      </div>
+      <p class="text-xs text-gray-400">
+        Cole abaixo os dados da sua planilha (separados por vírgula ou ponto-e-vírgula) com o cabeçalho: <br>
+        <code class="text-amber-400">modelo,cidade,estado,ano,preco,pagamento</code>
+      </p>
+      <textarea id="csvInput" rows="6" class="w-full bg-[#0b0c10] border border-gray-700 rounded-lg p-3 text-xs text-gray-200 font-mono" placeholder="911 Carrera,São Paulo,SP,2024,890000,À Vista&#10;Cayenne,Curitiba,PR,2023,750000,Financiamento"></textarea>
+      <div class="flex justify-end gap-3">
+        <button onclick="toggleModal()" class="px-4 py-2 text-xs bg-gray-800 text-gray-300 rounded-lg">Cancelar</button>
+        <button onclick="loadCustomCSV()" class="px-4 py-2 text-xs bg-porsche-red text-white font-semibold rounded-lg">Processar Dados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-gray-800 py-4 mt-8 text-center text-xs text-gray-500">
+    Desafio DIO • Dashboard Interativa Porsche (Dados Sanitizados) • Desenvolvido para Portfólio no GitHub Pages
+  </footer>
+
+  <script>
+    // ==========================================
+    // 1. BASE DE DADOS SANITIZADA (100 VENDAS PORSCHE)
+    // ==========================================
+    const rawSalesData = [
+      { id: 1, modelo: "911 Carrera", cidade: "São Paulo", estado: "SP", ano: 2024, preco: 890000, pagamento: "À Vista" },
+      { id: 2, modelo: "Cayenne", cidade: "Rio de Janeiro", estado: "RJ", ano: 2024, preco: 780000, pagamento: "Financiamento" },
+      { id: 3, modelo: "Macan", cidade: "Belo Horizonte", estado: "MG", ano: 2023, preco: 520000, pagamento: "Financiamento" },
+      { id: 4, modelo: "Taycan", cidade: "Curitiba", estado: "PR", ano: 2024, preco: 690000, pagamento: "Leasing" },
+      { id: 5, modelo: "718 Cayman", cidade: "Porto Alegre", estado: "RS", ano: 2022, preco: 560000, pagamento: "À Vista" },
+      { id: 6, modelo: "Panamera", cidade: "São Paulo", estado: "SP", ano: 2024, preco: 840000, pagamento: "À Vista" },
+      { id: 7, modelo: "911 Turbo S", cidade: "São Paulo", estado: "SP", ano: 2024, preco: 1650000, pagamento: "À Vista" },
+      { id: 8, modelo: "Macan", cidade: "Campinas", estado: "SP", ano: 2023, preco: 510000, pagamento: "Consórcio" },
+      { id: 9, modelo: "Cayenne", cidade: "Brasília", estado: "DF", ano: 2023, preco: 760000, pagamento: "Financiamento" },
+      { id: 10, modelo: "718 Boxster", cidade: "Florianópolis", estado: "SC", ano: 2024, preco: 590000, pagamento: "À Vista" }
+    ];
+
+    // Gerador determinístico para completar exatamente 100 vendas realistas e sanitizadas
+    const modelosCatalog = [
+      { nome: "911 Carrera", base: 890000 },
+      { nome: "911 Turbo S", base: 1650000 },
+      { nome: "Cayenne", base: 780000 },
+      { nome: "Macan", base: 520000 },
+      { nome: "Taycan", base: 690000 },
+      { nome: "Panamera", base: 840000 },
+      { nome: "718 Cayman", base: 560000 },
+      { nome: "718 Boxster", base: 590000 }
+    ];
+    const pracasCatalog = [
+      { cidade: "São Paulo", estado: "SP" },
+      { cidade: "Campinas", estado: "SP" },
+      { cidade: "Ribeirão Preto", estado: "SP" },
+      { cidade: "Rio de Janeiro", estado: "RJ" },
+      { cidade: "Belo Horizonte", estado: "MG" },
+      { cidade: "Curitiba", estado: "PR" },
+      { cidade: "Florianópolis", estado: "SC" },
+      { cidade: "Balneário Camboriú", estado: "SC" },
+      { cidade: "Porto Alegre", estado: "RS" },
+      { cidade: "Brasília", estado: "DF" },
+      { cidade: "Goiânia", estado: "GO" },
+      { cidade: "Recife", estado: "PE" }
+    ];
+    const pagamentosCatalog = ["À Vista", "Financiamento", "Leasing", "Consórcio"];
+    const anosCatalog = [2022, 2023, 2024];
+
+    for (let i = 11; i <= 100; i++) {
+      const m = modelosCatalog[(i * 7) % modelosCatalog.length];
+      const p = pracasCatalog[(i * 3) % pracasCatalog.length];
+      const pag = pagamentosCatalog[(i * 5) % pagamentosCatalog.length];
+      const ano = anosCatalog[i % anosCatalog.length];
+      const variacao = ((i % 5) - 2) * 15000;
+      rawSalesData.push({
+        id: i,
+        modelo: m.nome,
+        cidade: p.cidade,
+        estado: p.estado,
+        ano: ano,
+        preco: m.base + variacao,
+        pagamento: pag
+      });
+    }
+
+    let salesData = [...rawSalesData];
+    let chartModelosInstance = null;
+    let chartEstadosInstance = null;
+    let chartPagamentosInstance = null;
+
+    // Formatador de Moeda BRL
+    const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
+
+    // ==========================================
+    // 2. INICIALIZAÇÃO DE FILTROS
+    // ==========================================
+    function populateFilters() {
+      const setOptions = (id, key, labelAll) => {
+        const select = document.getElementById(id);
+        const currentVal = select.value;
+        const uniqueVals = [...new Set(salesData.map(d => d[key]))].sort();
+        select.innerHTML = `<option value="ALL">${labelAll}</option>` +
+          uniqueVals.map(v => `<option value="${v}">${v}</option>`).join('');
+        if (uniqueVals.includes(currentVal) || currentVal === 'ALL') select.value = currentVal;
+      };
+
+      setOptions('filterModelo', 'modelo', 'Todos os Modelos');
+      setOptions('filterEstado', 'estado', 'Todos os Estados');
+      setOptions('filterAno', 'ano', 'Todos os Anos');
+      setOptions('filterPagamento', 'pagamento', 'Todos os Métodos');
+    }
+
+    function resetFilters() {
+      document.getElementById('filterModelo').value = 'ALL';
+      document.getElementById('filterEstado').value = 'ALL';
+      document.getElementById('filterAno').value = 'ALL';
+      document.getElementById('filterPagamento').value = 'ALL';
+      applyFilters();
+    }
+
+    // ==========================================
+    // 3. APLICAÇÃO DE FILTROS E ATUALIZAÇÃO
+    // ==========================================
+    function applyFilters() {
+      const fModelo = document.getElementById('filterModelo').value;
+      const fEstado = document.getElementById('filterEstado').value;
+      const fAno = document.getElementById('filterAno').value;
+      const fPagamento = document.getElementById('filterPagamento').value;
+
+      const filtered = salesData.filter(item => {
+        return (fModelo === 'ALL' || item.modelo === fModelo) &&
+               (fEstado === 'ALL' || item.estado === fEstado) &&
+               (fAno === 'ALL' || String(item.ano) === String(fAno)) &&
+               (fPagamento === 'ALL' || item.pagamento === fPagamento);
+      });
+
+      updateKPIs(filtered);
+      updateCharts(filtered);
+      updateTable(filtered);
+    }
+
+    // ==========================================
+    // 4. ATUALIZAÇÃO DOS INDICADORES DE TOPO (KPIs)
+    // ==========================================
+    function updateKPIs(data) {
+      const totalReceita = data.reduce((acc, cur) => acc + cur.preco, 0);
+      const totalVolume = data.length;
+      const ticketMedio = totalVolume > 0 ? totalReceita / totalVolume : 0;
+
+      // Modelo líder em receita
+      const recPorModelo = {};
+      data.forEach(d => { recPorModelo[d.modelo] = (recPorModelo[d.modelo] || 0) + d.preco; });
+      let topModelo = "-";
+      let topValor = 0;
+      for (const [mod, val] of Object.entries(recPorModelo)) {
+        if (val > topValor) { topValor = val; topModelo = mod; }
+      }
+
+      document.getElementById('kpiReceita').textContent = formatBRL(totalReceita);
+      document.getElementById('kpiVolume').textContent = `${totalVolume} un.`;
+      document.getElementById('kpiTicket').textContent = formatBRL(ticketMedio);
+      document.getElementById('kpiTopModelo').textContent = topModelo;
+      document.getElementById('kpiTopModeloSub').textContent = topValor > 0 ? formatBRL(topValor) : "Sem dados no filtro";
+    }
+
+    // ==========================================
+    // 5. RENDERIZAÇÃO DOS GRÁFICOS (PERGUNTAS 1, 2 e 3)
+    // ==========================================
+    function updateCharts(data) {
+      Chart.defaults.color = '#9ca3af';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+
+      // --- PERGUNTA 1: Receita vs Volume por Modelo ---
+      const modStats = {};
+      data.forEach(d => {
+        if (!modStats[d.modelo]) modStats[d.modelo] = { receita: 0, qtd: 0 };
+        modStats[d.modelo].receita += d.preco;
+        modStats[d.modelo].qtd += 1;
+      });
+      const modLabels = Object.keys(modStats).sort((a, b) => modStats[b].receita - modStats[a].receita);
+      const modReceitas = modLabels.map(m => modStats[m].receita / 1000000); // Em Milhões
+      const modQtds = modLabels.map(m => modStats[m].qtd);
+
+      if (chartModelosInstance) chartModelosInstance.destroy();
+      const ctxMod = document.getElementById('chartModelos').getContext('2d');
+      chartModelosInstance = new Chart(ctxMod, {
+        type: 'bar',
+        data: {
+          labels: modLabels,
+          datasets: [
+            {
+              label: 'Receita (R$ Milhões)',
+              data: modReceitas,
+              backgroundColor: '#d5001c',
+              borderRadius: 4,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Unidades Vendidas',
+              data: modQtds,
+              type: 'line',
+              borderColor: '#f59e0b',
+              backgroundColor: '#f59e0b',
+              borderWidth: 2,
+              pointRadius: 4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            x: { grid: { display: false } },
+            y: {
+              type: 'linear',
+              position: 'left',
+              grid: { color: '#1f2937' },
+              title: { display: true, text: 'R$ (Milhões)' }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Qtd Veículos' }
+            }
+          }
+        }
+      });
+
+      // --- PERGUNTA 2: Receita por Estado (UF) ---
+      const ufStats = {};
+      data.forEach(d => { ufStats[d.estado] = (ufStats[d.estado] || 0) + d.preco; });
+      const ufLabels = Object.keys(ufStats).sort((a, b) => ufStats[b] - ufStats[a]);
+      const ufReceitas = ufLabels.map(u => ufStats[u] / 1000000);
+
+      if (chartEstadosInstance) chartEstadosInstance.destroy();
+      const ctxUf = document.getElementById('chartEstados').getContext('2d');
+      chartEstadosInstance = new Chart(ctxUf, {
+        type: 'bar',
+        data: {
+          labels: ufLabels,
+          datasets: [{
+            label: 'Receita por UF (R$ Milhões)',
+            data: ufReceitas,
+            backgroundColor: '#c5a059',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1f2937' }, title: { display: true, text: 'R$ (Milhões)' } },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+
+      // --- PERGUNTA 3: Receita por Método de Pagamento ---
+      const pagStats = {};
+      data.forEach(d => { pagStats[d.pagamento] = (pagStats[d.pagamento] || 0) + d.preco; });
+      const pagLabels = Object.keys(pagStats);
+      const pagValues = pagLabels.map(p => pagStats[p]);
+
+      if (chartPagamentosInstance) chartPagamentosInstance.destroy();
+      const ctxPag = document.getElementById('chartPagamentos').getContext('2d');
+      chartPagamentosInstance = new Chart(ctxPag, {
+        type: 'doughnut',
+        data: {
+          labels: pagLabels,
+          datasets: [{
+            data: pagValues,
+            backgroundColor: ['#d5001c', '#3b82f6', '#c5a059', '#10b981'],
+            borderColor: '#111318',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.label}: ${formatBRL(ctx.raw)}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // 6. TABELA DETALHADA
+    // ==========================================
+    function updateTable(data) {
+      document.getElementById('tableCount').textContent = `${data.length} registros`;
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = data.map(d => `
+        <tr class="hover:bg-gray-800/50 transition">
+          <td class="py-2.5 px-4 font-mono text-gray-500">#${String(d.id).padStart(3, '0')}</td>
+          <td class="py-2.5 px-4 font-semibold text-white">${d.modelo}</td>
+          <td class="py-2.5 px-4">${d.cidade} <span class="text-gray-500">(${d.estado})</span></td>
+          <td class="py-2.5 px-4">${d.ano}</td>
+          <td class="py-2.5 px-4">
+            <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 border border-gray-700">${d.pagamento}</span>
+          </td>
+          <td class="py-2.5 px-4 text-right font-semibold text-emerald-400">${formatBRL(d.preco)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ==========================================
+    // 7. IMPORTADOR DE CSV CUSTOMIZADO
+    // ==========================================
+    function toggleModal() {
+      const modal = document.getElementById('csvModal');
+      modal.classList.toggle('hidden');
+      modal.classList.toggle('flex');
+    }
+
+    function loadCustomCSV() {
+      const text = document.getElementById('csvInput').value.trim();
+      if (!text) return alert("Cole os dados CSV primeiro!");
+
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const parsed = [];
+
+      lines.forEach((line, idx) => {
+        const sep = line.includes(';') ? ';' : ',';
+        const cols = line.split(sep).map(c => c.trim());
+        // Ignora cabeçalho se tiver a palavra "modelo" ou "preco"
+        if (idx === 0 && isNaN(parseFloat(cols[4]))) return;
+        if (cols.length >= 6) {
+          const precoLimpo = parseFloat(cols[4].replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+          const anoLimpo = parseInt(cols[3], 10) || 2024;
+          if (precoLimpo > 0) {
+            parsed.push({
+              id: parsed.length + 1,
+              modelo: cols[0],
+              cidade: cols[1],
+              estado: cols[2],
+              ano: anoLimpo,
+              preco: precoLimpo,
+              pagamento: cols[5]
+            });
+          }
+        }
+      });
+
+      if (parsed.length === 0) {
+        alert("Não foi possível ler os registros. Verifique o formato: modelo,cidade,estado,ano,preco,pagamento");
+        return;
+      }
+
+      salesData = parsed;
+      populateFilters();
+      resetFilters();
+      toggleModal();
+    }
+
+    // Inicializar ao carregar a página
+    window.addEventListener('DOMContentLoaded', () => {
+      populateFilters();
+      applyFilters();
+    });
+  </script>
+</body>
+</html>
